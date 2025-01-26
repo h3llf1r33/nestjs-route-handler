@@ -542,6 +542,64 @@ describe('Nest Lambda Handler Tests', () => {
         });
     });
 
+    describe('Handler Schema Validation', () => {
+        it('should validate empty body when schema requires fields', async () => {
+            type InitialQuery = { email: string; name: string };
+            type Handlers = [typeof createUserHandler];
+
+            const handler = nestJsRouteHandlerBuilder<InitialQuery, Handlers>({
+                initialQueryReflector: {
+                    data: {
+                        email: "$['body']['email']",
+                        name: "$['body']['name']"
+                    }
+                },
+                handlers: [createUserHandler],
+                bodySchema: userSchema
+            });
+
+            const event = createEvent({ body: null });
+            const resMock: Partial<e.Response> = {
+                set: jest.fn(),
+                status: jest.fn().mockReturnThis(),
+                send: jest.fn()
+            };
+
+            await handler(event as any, resMock as e.Response, jest.fn());
+            expect(resMock.status).toHaveBeenCalledWith(400);
+            const body = JSON.parse((resMock.send as jest.Mock).mock.calls[0][0]);
+            expect(body.validationErrors).toBeDefined();
+        });
+
+        it('should validate undefined body when schema requires fields', async () => {
+            type InitialQuery = { email: string; name: string };
+            type Handlers = [typeof createUserHandler];
+
+            const handler = nestJsRouteHandlerBuilder<InitialQuery, Handlers>({
+                initialQueryReflector: {
+                    data: {
+                        email: "$['body']['email']",
+                        name: "$['body']['name']"
+                    }
+                },
+                handlers: [createUserHandler],
+                bodySchema: userSchema
+            });
+
+            const event = createEvent({ body: undefined });
+            const resMock: Partial<e.Response> = {
+                set: jest.fn(),
+                status: jest.fn().mockReturnThis(),
+                send: jest.fn()
+            };
+
+            await handler(event as any, resMock as e.Response, jest.fn());
+            expect(resMock.status).toHaveBeenCalledWith(400);
+            const body = JSON.parse((resMock.send as jest.Mock).mock.calls[0][0]);
+            expect(body.validationErrors).toBeDefined();
+        });
+    });
+
     describe('Custom Configurations', () => {
 
         it('should include custom security headers', async () => {
