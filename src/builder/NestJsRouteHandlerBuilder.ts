@@ -158,8 +158,8 @@ export const nestJsRouteHandlerBuilder = <
                 return res.status(500).send(JSON.stringify(errorBody));
             }
 
-            if (event.body && config.bodySchema) {
-                const bodyData = JSON.parse(event.body);
+            if (config.bodySchema) {
+                const bodyData = JSON.parse(event.body || "{}")
                 validate(config.bodySchema, bodyData);
             }
 
