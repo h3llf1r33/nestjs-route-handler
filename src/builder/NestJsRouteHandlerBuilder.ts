@@ -1,14 +1,18 @@
-import { Response } from 'express';
+import {Response} from 'express';
 import {EmptyError, firstValueFrom, from, map, Observable, switchMap, timeout} from 'rxjs';
-import { v4 } from 'uuid';
+import {v4} from 'uuid';
 import Ajv, {ErrorObject, FormatDefinition, KeywordDefinition} from 'ajv';
 import addFormats from 'ajv-formats';
 import ajvErrors from "ajv-errors";
 import {
-    HandlerConfig, IBaseRequestContext,
+    HandlerConfig,
+    IBaseRequestContext,
     IHandlerOptions,
-    IJsonSchema, IQueryType, IUseCaseInlineFunc,
-    PayloadTooLargeError, RequestTimeoutError,
+    IJsonSchema,
+    IQueryType,
+    IUseCaseInlineFunc,
+    PayloadTooLargeError,
+    RequestTimeoutError,
     SchemaValidationError
 } from "@denis_bruns/core";
 import {reflect} from "@denis_bruns/reflection";
@@ -86,7 +90,13 @@ const formatErrors = (errors: ErrorObject[] | null | undefined) => {
             key = 'generic';
         }
 
-        if (error.keyword === 'errorMessage' && error.params.errors) {
+        // Handle required errors with custom message
+        if (error.keyword === 'required') {
+            result.push({
+                key,
+                message: 'requiredError'
+            });
+        } else if (error.keyword === 'errorMessage' && error.params.errors) {
             error.params.errors.forEach((err: any) => {
                 if (typeof error.schema === 'object' && error.schema !== null) {
                     const msg = (error.schema as any)[err.keyword];
@@ -98,7 +108,7 @@ const formatErrors = (errors: ErrorObject[] | null | undefined) => {
                     }
                 }
             });
-        } else if(error.message) {
+        } else if (error.message) {
             result.push({
                 key,
                 message: error.message
@@ -198,7 +208,9 @@ export const nestJsRouteHandlerBuilder = <
                 observable = observable.pipe(
                     timeout({
                         first: config.timeoutMs,
-                        with: () => { throw new RequestTimeoutError(); }
+                        with: () => {
+                            throw new RequestTimeoutError();
+                        }
                     })
                 );
             }
